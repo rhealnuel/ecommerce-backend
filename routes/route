@@ -1,0 +1,128 @@
+const express = require('express')
+const router = express.Router();
+const Product = require('../Models/product')
+const User = require('../Models/user')
+const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
+
+
+router.post("/", async (req, res) => {
+    try {
+       const product = new Product ({
+        type: req.body.type,
+        name: req.body.name, 
+        fit: req.body.fit, 
+        price: req.body.price, 
+        images: req.body.images, 
+        instock: req.body.instock, 
+        features: req.body.features, 
+        sizes: req.body.sizes, 
+        joinlife: req.body.joinlife, 
+        material: req.body.material    
+    });
+
+    const savedProduct = await product.save();
+    res.json({ product: savedProduct });
+   
+    } catch (error) {
+        res.json({error})
+    }
+});
+
+
+router.get("/", async(req,res) => {
+    const values = await Product.find()
+
+    res.json(values)
+});
+
+router.delete("/product/:id", (req, res) => {
+
+    Product.findByIdAndDelete(req.params.id)
+    .then(result => {
+        if(result) {
+            res.send({message: "deleted successfully"})
+        } else {
+            res.status(404).send({message: "product not found"})
+        }
+    })
+    .catch((err) => {
+      console.error('Error deleting product:', err);
+      res.status(500).send({ error: 'Error deleting the product' });
+    })
+})
+
+
+router.get("/product/:id", async(req, res) => {
+    const id = req.params.id
+
+    const values = await Product.findById(id)
+
+    res.send(values)
+
+
+})
+
+router.post("/register", async (req, res) => {
+    try {
+        const {username, password} = req.body
+        if(!username || !password) {
+            return res.status(404).json({message:'username and password is required'})
+        }
+
+        const userExist = await User.findOne({username});
+
+        if(userExist) {
+            return res.status(409).json({message: 'username already exists'})
+        }
+
+        const saltRound = 10
+        const hashedPassword = await bcrypt.hash(password, saltRound)
+
+        await User.create({
+            username, password: hashedPassword
+        })
+
+       return res.status(201).json({message: 'User created successfully'});
+        
+    } catch (error) {
+       return res.status(400).json({message: 'Error registering new user'});
+    }
+})
+
+router.post("/login", async(req, res) => {
+    try {
+        const {username, password} = req.body
+
+        if(username === '' || password === ''){
+          return  res.json({message: "password and username cannot be blank"})
+        }
+        
+        const user = await User.findOne( {username} )
+
+        if(!user) {
+           return res.json({message: "username does not exist"})
+        }
+
+        const passwordcheck = await bcrypt.compare(password, user.password)
+
+        if(passwordcheck){
+
+          return  res.status(200).json({message: "logged in successfully"})
+
+        } else{
+
+          return  res.status(400).json({message: "incorrect password"})
+        }
+        
+        
+
+    } catch (error) {
+        return res.json({message: "error loggin in "})
+
+    }
+})
+
+
+
+module.exports = router
