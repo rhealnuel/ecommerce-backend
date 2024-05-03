@@ -3,8 +3,9 @@ const mongoose = require('mongoose')
 const app = express()
 const myRoutes = require('./routes/route')
 const cors = require('cors')
+require('dotenv').config()
 
-
+const URI = process.env.URI
 
 app.use(express.urlencoded({extended: false}))
 app.use(express.json()); // Middleware to parse JSON bodies
@@ -15,7 +16,7 @@ app.get("/", (req, res) => {
 })
 app.use("/api", myRoutes)
  
-mongoose.connect("mongodb+srv://admin:admin@emmanuel.q96slry.mongodb.net/Node-api?retryWrites=true&w=majority")
+mongoose.connect(URI)
 .then(() => {
     console.log('connected to database')
     app.listen(5000, (() => (
